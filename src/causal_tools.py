@@ -358,7 +358,7 @@ def manual_transfer_entropy_lagged(y_source, x_target, bins, k_lag):
                 if p_ijk[i, j, k] > epsilon and p_j[j] > epsilon and p_jk[j, k] > epsilon and p_ij[i, j] > epsilon:
                     log_term = np.log((p_ijk[i, j, k] * p_j[j]) / (p_jk[j, k] * p_ij[i, j]))
                     te += p_ijk[i, j, k] * log_term
-    return te / np.log(2) # Return in bits [cite: 151]
+    return te / np.log(2) 
 
 def manual_cmi(x, y, z, bins):
     """
@@ -392,4 +392,4 @@ def manual_cmi(x, y, z, bins):
                     log_term = np.log((p_xyz_val * p_z_val) / (p_xz_val * p_yz_val))
                     cmi += p_xyz_val * log_term
                             
-    return cmi / np.log(2) # Return in bits [cite: 151]
+    return cmi / np.log(2) # Return in bits 
