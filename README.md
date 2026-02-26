@@ -29,7 +29,9 @@ Each case corresponds to a script in the `src/` directory, testing specific prop
 **Objective:** Verify that no patterns are detected in purely stochastic data.
 
 **Mathematical Model:**
+
 $$X(t) = \sigma \epsilon_t^X$$
+
 $$Y(t) = \sigma \epsilon_t^Y$$
 
 Where $\epsilon$ is independent Gaussian white noise.
@@ -43,8 +45,11 @@ Where $\epsilon$ is independent Gaussian white noise.
 **Objective:** Distinguish between direct links and shared external drivers ($U$).
 
 **Mathematical Model:**
+
 $$U_t = \sigma \epsilon_t^u \quad \text{(Common Driver)}$$
+
 $$X_t = U_t + \sigma \epsilon_t^x$$
+
 $$Y_t = U_t + \sigma \epsilon_t^y$$
 
 * **Script:** `case_02_common_cause.py`
@@ -56,7 +61,9 @@ $$Y_t = U_t + \sigma \epsilon_t^y$$
 **Objective:** Detect directed relationships with a specific time delay ($\tau$).
 
 **Mathematical Model:**
+
 $$X_t = a X_{t-1} + \sigma \epsilon_t^x$$
+
 $$Y_t = b Y_{t-1} + c X_{t-\tau} + \sigma \epsilon_t^y$$
 
 * **Script:** `case_03_linear_lag.py`
@@ -68,7 +75,9 @@ $$Y_t = b Y_{t-1} + c X_{t-\tau} + \sigma \epsilon_t^y$$
 **Objective:** Demonstrate that Information Theory handles non-linearity where linear methods fail.
 
 **Mathematical Model:**
+
 $$X_t = a X_{t-1} + \sigma \epsilon_t^x$$
+
 $$Y_t = (X_{t-\tau})^2 + \sigma \epsilon_t^y$$
 
 * **Script:** `case_04_nonlinear_te.py`
@@ -80,8 +89,11 @@ $$Y_t = (X_{t-\tau})^2 + \sigma \epsilon_t^y$$
 **Objective:** Isolate direct links from indirect paths using Conditional Mutual Information (CMI).
 
 **Mathematical Model:**
+
 $$X_t = aX_{t-1} + \sigma\epsilon_t^X$$
+
 $$Y_t = bY_{t-1} + cX_{t-1} + \sigma\epsilon_t^Y$$
+
 $$Z_t = dZ_{t-1} + eY_{t-1} + \sigma\epsilon_t^Z$$
 
 * **Script:** `case_05_causal_chain.py`
