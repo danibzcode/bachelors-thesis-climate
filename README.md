@@ -111,12 +111,3 @@ To reproduce these results, ensure you have a Python environment with the follow
 pip install numpy pandas matplotlib scipy statsmodels tigramite
 
 
-
----
-
-## Installation and Usage
-
-To reproduce these results, ensure you have a Python environment with the following dependencies:
-
-```bash
-pip install numpy pandas matplotlib scipy statsmodels tigramite
