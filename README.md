@@ -23,9 +23,14 @@ To rigorously test these tools before applying them to real climate data, they a
 
 ## How to Run the Scripts
 
-The code is developed in **Python** and is designed to be easily executed in IDEs like Spyder.
+This project is developed in **Python**. To run the scripts and reproduce the causal networks, you need to install the following libraries:
 
-### 1. Prerequisites
-Make sure you have installed the required libraries. You can install the basic data science stack via your terminal:
+* `numpy` and `pandas`: For data manipulation and matrix operations.
+* `matplotlib`: For generating temporal evolution plots and scatter graphs.
+* `scipy`: For statistical functions and F-tests in manual implementations.
+* `statsmodels`: For standard Granger Causality tests.
+* `tigramite`: For the PCMCI algorithm and Conditional Mutual Information (CMI) tests.
+
+You can install all dependencies via your terminal using:
 ```bash
-pip install numpy pandas matplotlib seaborn scipy
+pip install numpy pandas matplotlib scipy statsmodels tigramite
