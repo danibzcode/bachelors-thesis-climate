@@ -314,3 +314,82 @@ def get_best_granger_pvalue(results, max_lag):
     """Extracts the minimum p-value from statsmodels grangercausalitytests."""
     p_values = [results[lag][0]['ssr_ftest'][1] for lag in range(1, max_lag + 1)]
     return np.min(p_values)
+
+# ------------------------------------------------------------------------------
+# 4. ADVANCED CAUSALITY (TE & CMI) - FIXES "NOT DEFINED" ERROR
+# ------------------------------------------------------------------------------
+
+def manual_transfer_entropy_lagged(y_source, x_target, bins, k_lag):
+    """
+    Estimates the Transfer Entropy from Y to X with a specific lag.
+    Essential for Case 4 (Non-linear causality). [cite: 189, 190, 191]
+    """
+    # Aligning data for T, T-k
+    x_t_target = x_target[k_lag:]
+    x_t_minus_k = x_target[:-k_lag]
+    y_t_minus_k = y_source[:-k_lag]
+    N = len(x_t_target)
+    
+    # Normalizing range for binning
+    all_data = np.concatenate([x_t_target, x_t_minus_k, y_t_minus_k])
+    min_val, max_val = np.min(all_data), np.max(all_data)
+    bin_edges = np.linspace(min_val, max_val, bins + 1)
+    
+    # Digitizing (Binning)
+    x_t_d = np.digitize(x_t_target, bin_edges[1:-1])
+    x_tk_d = np.digitize(x_t_minus_k, bin_edges[1:-1])
+    y_tk_d = np.digitize(y_t_minus_k, bin_edges[1:-1])
+    
+    # Probabilities calculation
+    p_ijk_counts = np.histogramdd([x_t_d, x_tk_d, y_tk_d], bins=bins, range=[(0, bins), (0, bins), (0, bins)])[0]
+    p_ijk = p_ijk_counts / N
+    p_jk_counts = np.histogram2d(x_tk_d, y_tk_d, bins=bins, range=[(0, bins), (0, bins)])[0]
+    p_jk = p_jk_counts / N
+    p_ij_counts = np.histogram2d(x_t_d, x_tk_d, bins=bins, range=[(0, bins), (0, bins)])[0]
+    p_ij = p_ij_counts / N
+    p_j_counts = np.histogram(x_tk_d, bins=bins, range=(0, bins))[0]
+    p_j = p_j_counts / N
+    
+    te = 0.0
+    epsilon = 1e-12
+    for i in range(bins):
+        for j in range(bins):
+            for k in range(bins):
+                if p_ijk[i, j, k] > epsilon and p_j[j] > epsilon and p_jk[j, k] > epsilon and p_ij[i, j] > epsilon:
+                    log_term = np.log((p_ijk[i, j, k] * p_j[j]) / (p_jk[j, k] * p_ij[i, j]))
+                    te += p_ijk[i, j, k] * log_term
+    return te / np.log(2) # Return in bits [cite: 151]
+
+def manual_cmi(x, y, z, bins):
+    """
+    Calculates the Conditional Mutual Information I(X; Y | Z) in bits.
+    Core logic for PCMCI and Case 5 (Causal Chains). [cite: 201, 209, 212]
+    """
+    data = np.stack([x, y, z], axis=1)
+    p_xyz_counts, edges = np.histogramdd(data, bins=bins)
+    p_xyz = p_xyz_counts / len(x)
+
+    p_xz_counts, _, _ = np.histogram2d(x, z, bins=[edges[0], edges[2]])
+    p_xz = p_xz_counts / len(x)
+    
+    p_yz_counts, _, _ = np.histogram2d(y, z, bins=[edges[1], edges[2]])
+    p_yz = p_yz_counts / len(y)
+    
+    p_z_counts, _ = np.histogram(z, bins=edges[2])
+    p_z = p_z_counts / len(z)
+    
+    cmi = 0.0
+    epsilon = 1e-12
+    for i in range(bins):
+        for j in range(bins):
+            for k in range(bins):
+                p_xyz_val = p_xyz[i, j, k]
+                if p_xyz_val < epsilon: continue
+                p_z_val = p_z[k]
+                p_xz_val = p_xz[i, k]
+                p_yz_val = p_yz[j, k]
+                if p_z_val > epsilon and p_xz_val > epsilon and p_yz_val > epsilon:
+                    log_term = np.log((p_xyz_val * p_z_val) / (p_xz_val * p_yz_val))
+                    cmi += p_xyz_val * log_term
+                            
+    return cmi / np.log(2) # Return in bits [cite: 151]
