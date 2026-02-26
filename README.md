@@ -21,7 +21,7 @@ To rigorously test these tools before applying them to real climate data, they a
 
 ---
 
-## 🚀 How to Run the Scripts
+## How to Run the Scripts
 
 The code is developed in **Python** and is designed to be easily executed in IDEs like Spyder.
 
