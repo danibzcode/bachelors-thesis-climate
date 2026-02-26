@@ -12,6 +12,13 @@ This project evaluates different association and causal inference methods:
 * **Directed Causal Inference:** Granger Causality (GC) and Transfer Entropy (TE).
 * **Causal Network Discovery:** PCMCI algorithm (used to isolate direct causality and discard spurious correlations).
 
+### 📈 Statistical Validation Framework (Surrogate Testing)
+
+A core component of this project is the rigorous statistical validation of the inferred causal links. A non-zero metric (like Mutual Information or Transfer Entropy) can arise purely from stochastic noise in finite time series. To address this, the project implements hypothesis testing using surrogate data:
+
+* **IAAFT Surrogates:** We generate null-hypothesis distributions using Iterative Amplitude Adjusted Fourier Transform (IAAFT) techniques. This destroys any cross-coupling between variables while preserving the power spectrum (autocorrelation) and amplitude distribution of the individual original signals.
+* **Empirical p-values:** The causal algorithms are evaluated against hundreds of these surrogate pairs. A causal link is only considered valid if the observed metric significantly exceeds the null distribution (typically using a confidence level of $p < 0.05$).
+
 To rigorously test these tools before applying them to real climate data, they are validated against five synthetic scenarios:
 1. **Case 1:** Independent Noise (Baseline) 
 2. **Case 2:** Common Cause (Confounding variables) 
