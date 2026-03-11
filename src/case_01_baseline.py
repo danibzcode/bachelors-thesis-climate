@@ -1,117 +1,130 @@
 # ==============================================================================
-# Case 1: Independent White Noise (Baseline)
-# Description: Testing all algorithms against independent stochastic processes.
-#              This validates the IAAFT surrogate framework for the TFG.
+# TFG MASTER SCRIPT - CASE 1: INDEPENDENT WHITE NOISE (PURE SYNTHETIC)
+# Description: Benchmarking linear, non-linear, and causal metrics against noise.
+#              Optimized for LaTeX integration and academic clarity.
 # ==============================================================================
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-
-# Import custom functions from our modular library
+from statsmodels.tsa.stattools import grangercausalitytests
 from causal_tools import (
     create_surrogate, 
     manual_pearson_corr, 
     manual_mi, 
-    manual_granger_test,
     manual_transfer_entropy_lagged,
+    get_best_granger_pvalue,
     standardize
 )
 
 # ---------------------------------------------------------
-# 1. DATA GENERATION: Independent Noise
+# 1. GENERACIÓN DE DATOS SINTÉTICOS
 # ---------------------------------------------------------
-# Equation: X(t) = sigma_x * epsilon_x
-#           Y(t) = sigma_y * epsilon_y
+# X_t = epsilon_x,  Y_t = epsilon_y (Procesos estocásticos independientes)
 n_samples = 250
 np.random.seed(123)
 
 x = np.random.randn(n_samples) 
 y = np.random.randn(n_samples)
 
-print("Case 1: Independent White Noise (Baseline)")
-print(f"Mathematical Model: X_t = noise, Y_t = noise (No coupling)")
-print("-" * 65)
+print("Ejecutando Caso 1: Ruido Blanco Independiente...")
+print(f"Muestras: {n_samples} | Semilla: 123")
 
 # ---------------------------------------------------------
-# 2. ANALYSIS PARAMETERS
+# 2. CONFIGURACIÓN DEL ANÁLISIS ESTADÍSTICO
 # ---------------------------------------------------------
-N_BINS = 5           
-TEST_LAG = 1         
-n_surrogates = 500   
+N_BINS = 5           # Discretización para MI y TE
+TEST_LAG = 1         # Retraso para causalidad
+n_surrogates = 500   # Número de subrogados IAAFT para el test de hipótesis
 
-# ---------------------------------------------------------
-# 3. STATISTICAL CALCULATIONS
-# ---------------------------------------------------------
-# A. Calculate Observed Metrics
+# A. Cálculo de métricas observadas
 obs_pearson = manual_pearson_corr(x, y)
 obs_mi = manual_mi(x, y, bins=N_BINS)
 obs_te = manual_transfer_entropy_lagged(x, y, bins=N_BINS, k_lag=TEST_LAG)
-_, p_granger_parametric = manual_granger_test(y, x, max_lag=TEST_LAG)
 
-# B. Generate Surrogate Distributions (IAAFT)
-print(f"Generating {n_surrogates} surrogates...")
+# B. Cálculo de Causalidad de Granger (Test paramétrico analítico)
+data_g = pd.DataFrame({'Y': y, 'X': x})
+# Test X -> Y
+res_xy = grangercausalitytests(data_g[['Y', 'X']], maxlag=TEST_LAG, verbose=False)
+p_granger = get_best_granger_pvalue(res_xy, TEST_LAG)
+
+# C. Generación de Distribuciones Nulas (IAAFT) para métricas no paramétricas
+print(f"Generando {n_surrogates} subrogados IAAFT...")
 surr_pearson, surr_mi, surr_te = [], [], []
 
-for _ in range(n_surrogates):
+for i in range(n_surrogates):
     sx = create_surrogate(x)
     sy = create_surrogate(y)
     surr_pearson.append(manual_pearson_corr(sx, sy))
     surr_mi.append(manual_mi(sx, sy, bins=N_BINS))
     surr_te.append(manual_transfer_entropy_lagged(sx, sy, bins=N_BINS, k_lag=TEST_LAG))
 
-# C. Calculate Empirical p-values
+# D. Cálculo de p-valores empíricos
 p_pearson = np.mean(np.abs(surr_pearson) >= np.abs(obs_pearson))
 p_mi = np.mean(np.array(surr_mi) >= obs_mi)
 p_te = np.mean(np.array(surr_te) >= obs_te)
 
 # ---------------------------------------------------------
-# 4. RESULTS DISPLAY
+# 3. VISUALIZACIÓN ACADÉMICA (LAYOUT HORIZONTAL)
 # ---------------------------------------------------------
-print("\n" + "="*70)
-print("BENCHMARK RESULTS: NOISE ANALYSIS")
-print("="*70)
-def show_res(label, p):
-    res = "CORRECT (Not Significant)" if p >= 0.05 else "FAIL (False Positive)"
-    print(f"{label:<25} | p-value: {p:7.4f} | {res}")
+plt.rcParams.update({'font.size': 10, 'font.family': 'serif'}) # Fuente serif para LaTeX
 
-show_res("Pearson Correlation", p_pearson)
-show_res("Mutual Information", p_mi)
-show_res("Granger Causality", p_granger_parametric)
-show_res("Transfer Entropy", p_te)
-print("="*70)
+fig = plt.figure(figsize=(12, 7))
+gs = fig.add_gridspec(2, 3, height_ratios=[1, 1.2])
 
-# ---------------------------------------------------------
-# 5. VISUALIZATION 1: TIME SERIES
-# ---------------------------------------------------------
-plt.figure(figsize=(12, 4))
-plt.plot(standardize(x), label='Signal X (Noise)', color='#1f77b4', linewidth=1.2)
-plt.plot(standardize(y), label='Signal Y (Noise)', color='#ff7f0e', linewidth=1.2)
-plt.title('Case 1: Visual Inspection of Independent Signals', fontsize=14)
-plt.xlabel('Time Step')
-plt.ylabel('Standardized Value')
-plt.legend()
-plt.grid(True, linestyle='--', alpha=0.5)
+# --- A. SERIES TEMPORALES (DETALLE) ---
+ax_time = fig.add_subplot(gs[0, :])
+zoom = slice(0, 60) # Visualizamos 60 pasos para claridad
+ax_time.plot(standardize(x)[zoom], 'o-', label='Proceso X', color='#1f77b4', markersize=4, linewidth=1.2, alpha=0.8)
+ax_time.plot(standardize(y)[zoom], 's-', label='Proceso Y', color='#ff7f0e', markersize=4, linewidth=1.2, alpha=0.8)
+ax_time.set_title('Caso 1: Baseline (Ruido Blanco Independiente)', fontweight='bold', pad=10)
+ax_time.set_xlabel('Paso de Tiempo (t)')
+ax_time.set_ylabel('Amplitud (std)')
+ax_time.legend(loc='upper right', ncol=2, frameon=True)
+ax_time.grid(True, alpha=0.3, linestyle='--')
+
+# Función para estandarizar los histogramas de significancia
+def plot_stat(ax, surr_data, obs_val, p_val, title, color_line):
+    ax.hist(surr_data, bins=30, color='#cccccc', edgecolor='white', density=True, alpha=0.7)
+    ax.axvline(obs_val, color=color_line, linestyle='-', linewidth=2.5, label=f'Obs: {obs_val:.3f}')
+    ax.set_title(title, fontsize=11, fontweight='bold')
+    
+    # Texto de resultado
+    res_text = f"p = {p_val:.4f}\n" + ("(Sig.)" if p_val < 0.05 else "(No Sig.)")
+    ax.text(0.95, 0.90, res_text, transform=ax.transAxes, verticalalignment='top', 
+            horizontalalignment='right', fontsize=9, bbox=dict(facecolor='white', alpha=0.8, edgecolor='none'))
+    
+    ax.set_yticks([]) 
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.legend(loc='lower center', fontsize='small')
+
+# --- B. DISTRIBUCIONES DE SIGNIFICANCIA ---
+ax_p = fig.add_subplot(gs[1, 0])
+plot_stat(ax_p, surr_pearson, obs_pearson, p_pearson, 'Correlación de Pearson', '#e41a1c')
+
+ax_mi = fig.add_subplot(gs[1, 1])
+plot_stat(ax_mi, surr_mi, obs_mi, p_mi, 'Información Mutua', '#377eb8')
+
+ax_te = fig.add_subplot(gs[1, 2])
+plot_stat(ax_te, surr_te, obs_te, p_te, 'Transfer Entropy', '#4daf4a')
+
 plt.tight_layout()
-
-# ---------------------------------------------------------
-# 6. VISUALIZATION 2: SIGNIFICANCE (With Frames/Edgecolor)
-# ---------------------------------------------------------
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-fig.suptitle('Statistical Significance Distributions (Case 1)', fontsize=16)
-
-def plot_signif(ax, surr_data, obs_val, p_val, title):
-    # Added 'edgecolor' to highlight individual bars
-    ax.hist(surr_data, bins=30, color='silver', edgecolor='black', linewidth=0.5, 
-            alpha=0.6, label='Null Dist (Surrogates)', density=True)
-    ax.axvline(obs_val, color='red', linestyle='--', linewidth=2, label=f'Observed ({obs_val:.3f})')
-    ax.set_title(f'{title}\np-value = {p_val:.4f}')
-    ax.legend(fontsize='small')
-    ax.grid(axis='y', alpha=0.3)
-
-plot_signif(axes[0, 0], surr_pearson, obs_pearson, p_pearson, 'Pearson Correlation')
-plot_signif(axes[0, 1], surr_mi, obs_mi, p_mi, 'Mutual Information')
-plot_signif(axes[1, 0], np.random.f(1, n_samples-3, 1000), 1.0, p_granger_parametric, 'Granger F-Test (Theoretical)')
-plot_signif(axes[1, 1], surr_te, obs_te, p_te, 'Transfer Entropy')
-
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.savefig('Benchmark_Caso1_Sintetico.png', dpi=300, bbox_inches='tight')
 plt.show()
+
+# ---------------------------------------------------------
+# 4. TABLA DE RESULTADOS POR CONSOLA
+# ---------------------------------------------------------
+print("\n" + "="*75)
+print(f"{'MÉTRICA':<25} | {'P-VALOR':<10} | {'RESULTADO TEST'}")
+print("-" * 75)
+def print_row(name, p):
+    status = "CORRECTO (No Causal)" if p >= 0.05 else "ERROR (Falso Positivo)"
+    print(f"{name:<25} | {p:10.4f} | {status}")
+
+print_row("Pearson (Asociación)", p_pearson)
+print_row("Info. Mutua (No Lineal)", p_mi)
+print_row("Granger (Lineal)", p_granger)
+print_row("Transfer Entropy (Causal)", p_te)
+print("="*75)
